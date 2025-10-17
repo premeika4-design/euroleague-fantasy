@@ -1,72 +1,88 @@
-import streamlit as st
-import pandas as pd
+import re
 import numpy as np
+import pandas as pd
 import plotly.express as px
-from io import StringIO
+import streamlit as st
 from pathlib import Path
 
 st.set_page_config(page_title="Euroleague Fantasy – Weekly Picks", page_icon="🏀", layout="wide")
 st.title("🏀 Euroleague Fantasy – Weekly Picks")
 
-# ---------------------------------
-# DEFAULTS (so you don't paste URLs)
-# ---------------------------------
-DEFAULT_PLAYERS_URL = "https://raw.githubusercontent.com/premeika4-design/euroleague-fantasy/main/data/players_sample.csv"
-DEFAULT_FIXTURES_PATH = Path("data/fixtures.csv")
-DEFAULT_DEF_POS_PATH  = Path("data/defense_by_pos.csv")
+# ===============================
+# SETTINGS (edit these if you like)
+# ===============================
+GIVEMESTAT_URL = "https://givemestat.com/euroleague/players"  # auto-load players table
+DEF_POS_PATH   = Path("data/defense_by_pos.csv")              # team defense by position (you added this)
+FIXTURES_PATH  = Path("data/fixtures.csv")                    # gameweek -> opponent (you added this)
 
-# --------------------------
-# Helpers
-# --------------------------
-@st.cache_data
-def read_csv_bytes(raw_bytes):
-    return pd.read_csv(StringIO(raw_bytes.decode("utf-8")))
+# ---- Fixed weights for ranking (tune here) ----
+# Value is EFF now (until you add prices), Usage is USG%, Opponent is easier/tougher, Minutes is playing time.
+W_VALUE   = 1.00   # how much EFF (or EFF/Price later) matters
+W_USAGE   = 0.80   # how much Usage% matters
+W_OPP     = 0.80   # how much opponent ease/toughness matters
+W_MINUTES = 0.90   # how much Minutes matters (your request: strong weight)
 
-@st.cache_data
-def read_csv_url(url):
-    return pd.read_csv(url)
-
-def coerce_numeric(df, cols):
+# ===============================
+# HELPERS
+# ===============================
+def clean_cols(cols):
+    """lower + remove symbols so we can map columns robustly."""
+    out = []
     for c in cols:
-        if c in df.columns:
-            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
-    return df
-
-def normalize_players(df):
-    """Map common givemestat-like columns to our schema; fall back if missing."""
-    lookup = {c.lower().strip(): c for c in df.columns}
-    def pick(*names):
-        for n in names:
-            if n.lower() in lookup:
-                return lookup[n.lower()]
-        return None
-
-    out = pd.DataFrame()
-    out["Player"]   = df.get(pick("Player","Name"), "")
-    out["Team"]     = df.get(pick("Team"), "")
-    out["Position"] = df.get(pick("Position","Pos"), "G")
-    out["Price"]    = df.get(pick("Price","Cost","Value"), 0)
-    out["Minutes"]  = df.get(pick("Minutes","MIN"), 0)
-    out["FGM"]      = df.get(pick("FGM","FG Made"), 0)
-    out["FGA"]      = df.get(pick("FGA","FG Att"), 0)
-    out["FTM"]      = df.get(pick("FTM","FT Made"), 0)
-    out["FTA"]      = df.get(pick("FTA","FT Att"), 0)
-    out["Rebounds"] = df.get(pick("Rebounds","REB","Total Rebounds"), 0)
-    out["Assists"]  = df.get(pick("Assists","AST"), 0)
-    out["Steals"]   = df.get(pick("Steals","STL"), 0)
-    out["Blocks"]   = df.get(pick("Blocks","BLK"), 0)
-    out["Turnovers"]= df.get(pick("Turnovers","TOV"), 0)
-    out["Points"]   = df.get(pick("Points","PTS"), 0)
-
-    # Clean/text
-    out["Player"]   = out["Player"].astype(str).str.strip()
-    out["Team"]     = out["Team"].astype(str).str.strip()
-    out["Position"] = out["Position"].astype(str).str.upper().str.replace(" ", "")
-    out = coerce_numeric(out, ["Price","Minutes","FGM","FGA","FTM","FTA","Rebounds","Assists","Steals","Blocks","Turnovers","Points"])
+        c0 = re.sub(r"\s+", " ", str(c)).strip()
+        c1 = re.sub(r"[^A-Za-z0-9_/ ]+", "", c0)
+        out.append(c1.lower())
     return out
 
-def compute_metrics(players):
-    # EFF (Euro/PIR-like)
+@st.cache_data
+def load_players_from_givemestat(url: str) -> pd.DataFrame:
+    # Find the biggest table on the page
+    tables = pd.read_html(url)
+    df = max(tables, key=lambda x: x.shape[0] * x.shape[1]).copy()
+    df.columns = clean_cols(df.columns)
+
+    def pick(*opts):
+        for o in opts:
+            if o in df.columns:
+                return o
+        return None
+
+    col_player = pick("player", "name")
+    col_team   = pick("team")
+    col_min    = pick("min", "minutes")
+    col_pts    = pick("pts", "points")
+    col_fgm    = pick("fgm")
+    col_fga    = pick("fga")
+    col_ftm    = pick("ftm")
+    col_fta    = pick("fta")
+    col_treb   = pick("treb", "rebounds", "reb")
+    col_ast    = pick("ast", "assists")
+    col_stl    = pick("stl", "steals")
+    col_blk    = pick("blk", "blocks")
+    col_tov    = pick("tov", "turnovers")
+
+    needed = [col_player, col_team, col_min, col_pts, col_fgm, col_fga, col_ftm, col_fta,
+              col_treb, col_ast, col_stl, col_blk, col_tov]
+    if any(c is None for c in needed):
+        raise ValueError("Could not map columns from givemestat table; site layout may have changed.")
+
+    players = pd.DataFrame({
+        "Player":   df[col_player].astype(str).str.strip(),
+        "Team":     df[col_team].astype(str).str.strip(),
+        "Minutes":  pd.to_numeric(df[col_min], errors="coerce").fillna(0),
+        "Points":   pd.to_numeric(df[col_pts], errors="coerce").fillna(0),
+        "FGM":      pd.to_numeric(df[col_fgm], errors="coerce").fillna(0),
+        "FGA":      pd.to_numeric(df[col_fga], errors="coerce").fillna(0),
+        "FTM":      pd.to_numeric(df[col_ftm], errors="coerce").fillna(0),
+        "FTA":      pd.to_numeric(df[col_fta], errors="coerce").fillna(0),
+        "Rebounds": pd.to_numeric(df[col_treb], errors="coerce").fillna(0),
+        "Assists":  pd.to_numeric(df[col_ast], errors="coerce").fillna(0),
+        "Steals":   pd.to_numeric(df[col_stl], errors="coerce").fillna(0),
+        "Blocks":   pd.to_numeric(df[col_blk], errors="coerce").fillna(0),
+        "Turnovers":pd.to_numeric(df[col_tov], errors="coerce").fillna(0),
+    })
+
+    # PIR-style Efficiency (EFF)
     miss_fg = players["FGA"] - players["FGM"]
     miss_ft = players["FTA"] - players["FTM"]
     players["EFF"] = (
@@ -75,7 +91,7 @@ def compute_metrics(players):
         - miss_fg - miss_ft - players["Turnovers"]
     )
 
-    # Usage% estimate
+    # Usage % estimate
     team_tot = players.groupby("Team", as_index=False)[["Minutes","FGA","FTA","Turnovers"]].sum()
     team_tot = team_tot.rename(columns={"Minutes":"TeamMinutes","FGA":"TeamFGA","FTA":"TeamFTA","Turnovers":"TeamTOV"})
     team_tot["TeamMinutesPerPlayer"] = team_tot["TeamMinutes"] / 5.0
@@ -85,140 +101,114 @@ def compute_metrics(players):
     denom = players["Minutes"] * (players["TeamFGA"] + 0.44*players["TeamFTA"] + players["TeamTOV"])
     players["USG%"] = np.where(denom > 0, 100 * numer / denom, 0.0)
 
-    # Value = EFF / Price
-    players["Value"] = np.where(players["Price"] > 0, players["EFF"] / players["Price"], 0.0)
+    # No fantasy prices provided -> for now, Value = EFF
+    players["Value"] = players["EFF"]
+
     return players
 
-def attach_fixtures(players, fixtures, gw):
-    fx = fixtures[fixtures["Gameweek"] == gw].copy()
-    return players.merge(fx, on="Team", how="left") if not fx.empty else players.assign(Opponent="")
-
-def apply_opponent_by_position(df, defpos):
-    needed = {"Team","Def_PG","Def_SG","Def_SF","Def_PF","Def_C"}
-    if defpos is None or not needed.issubset(set(defpos.columns)):
-        df["OppBenefit"] = 1.0
-        return df
-
-    pos_map = {"PG":"Def_PG","SG":"Def_SG","SF":"Def_SF","PF":"Def_PF","C":"Def_C"}
-
-    def get_mult(row):
-        opp = row.get("Opponent","")
-        pos = str(row.get("Position","")).upper()
-        if not opp or opp not in defpos["Team"].values:
-            return 1.0
-        row_d = defpos[defpos["Team"] == opp].iloc[0]
-        buckets = []
-        if "/" in pos:
-            for p in pos.split("/"):
-                p = p.strip()
-                if p in pos_map:
-                    buckets.append(float(row_d[pos_map[p]]))
-        elif pos in pos_map:
-            buckets.append(float(row_d[pos_map[pos]]))
-        elif pos.startswith("G"):
-            buckets.extend([row_d["Def_PG"], row_d["Def_SG"]])
-        elif pos.startswith("F"):
-            buckets.extend([row_d["Def_SF"], row_d["Def_PF"]])
-        else:
-            buckets.append(row_d["Def_C"])
-        val = float(np.mean(buckets)) if buckets else 1.0
-        return 1.0/val if val>0 else 1.0   # benefit: >1 easier, <1 tougher
-
-    df["OppBenefit"] = df.apply(get_mult, axis=1)
-    return df
-
-def zscore(series):
-    s = pd.to_numeric(series, errors="coerce")
-    mu = s.mean()
-    sd = s.std(ddof=0)
-    if sd == 0 or np.isnan(sd):
-        return pd.Series([0]*len(s), index=s.index)
-    return (s - mu) / sd
-
-def load_repo_csv(path: Path):
+def load_csv_if_exists(path: Path):
     return pd.read_csv(path) if path.exists() else None
 
-# --------------------------
-# Load data (no user action needed)
-# --------------------------
-# Players: try URL → fallback to local sample
-try:
-    players_df = read_csv_url(DEFAULT_PLAYERS_URL)
-except Exception:
-    players_df = load_repo_csv(Path("data/players_sample.csv"))
+def apply_fixtures(players: pd.DataFrame, fixtures: pd.DataFrame, gw: int) -> pd.DataFrame:
+    if fixtures is None or "Gameweek" not in fixtures.columns:
+        players["Opponent"] = ""
+        return players
+    fx = fixtures.copy()
+    fx["Gameweek"] = pd.to_numeric(fx["Gameweek"], errors="coerce").fillna(0).astype(int)
+    fx["Team"] = fx["Team"].astype(str).str.strip()
+    fx["Opponent"] = fx["Opponent"].astype(str).str.strip()
+    this = fx[fx["Gameweek"] == gw]
+    if this.empty:
+        players["Opponent"] = ""
+        return players
+    return players.merge(this, on="Team", how="left")
 
-if players_df is None:
-    st.error("Could not load players data. Please add data/players_sample.csv in the repo.")
+def apply_opponent_avg(players: pd.DataFrame, defpos: pd.DataFrame) -> pd.DataFrame:
+    """Use team average defensive multiplier across positions.
+       OppBenefit > 1 = easier opponent, < 1 = tougher."""
+    if defpos is None or not {"Team","Def_PG","Def_SG","Def_SF","Def_PF","Def_C"}.issubset(defpos.columns):
+        players["OppBenefit"] = 1.0
+        return players
+    d = defpos.copy()
+    d["Team"] = d["Team"].astype(str).str.strip()
+    d["AvgDef"] = d[["Def_PG","Def_SG","Def_SF","Def_PF","Def_C"]].mean(axis=1)
+    d["OppBenefitTeam"] = np.where(d["AvgDef"] > 0, 1.0 / d["AvgDef"], 1.0)
+    players = players.merge(d[["Team","OppBenefitTeam"]].rename(columns={"Team":"Opponent"}), on="Opponent", how="left")
+    players["OppBenefit"] = players["OppBenefitTeam"].fillna(1.0)
+    players.drop(columns=["OppBenefitTeam"], inplace=True)
+    return players
+
+def zscore(s: pd.Series):
+    s = pd.to_numeric(s, errors="coerce")
+    mu, sd = s.mean(), s.std(ddof=0)
+    if sd == 0 or np.isnan(sd):
+        return pd.Series(0, index=s.index)
+    return (s - mu) / sd
+
+# ===============================
+# LOAD & PREP
+# ===============================
+try:
+    players = load_players_from_givemestat(GIVEMESTAT_URL)
+except Exception:
+    st.error("Couldn’t load the players table from givemestat. Try refresh.")
     st.stop()
 
-fixtures_df = load_repo_csv(DEFAULT_FIXTURES_PATH)
-defpos_df   = load_repo_csv(DEFAULT_DEF_POS_PATH)
+fixtures = load_csv_if_exists(FIXTURES_PATH)
+defpos   = load_csv_if_exists(DEF_POS_PATH)
 
-# Normalize & metrics
-players = normalize_players(players_df)
-players = compute_metrics(players)
+# Controls (minimal)
+right = st.sidebar
+right.header("Controls")
+gameweek = right.number_input("Gameweek", min_value=1, value=1, step=1)
+min_min  = right.slider("Min minutes", 0, int(players["Minutes"].max()) if len(players) else 40, 10, 1)
+top_n    = right.slider("Show top N", 5, 50, 20, 1)
 
-# Controls
-left, right = st.columns([2,1])
-with right:
-    gameweek = st.number_input("Gameweek", min_value=1, value=1, step=1)
+# Attach opponent for selected GW and opponent ease
+players = apply_fixtures(players, fixtures, gameweek)
+players = apply_opponent_avg(players, defpos)
 
-# Fixtures & opponent
-if fixtures_df is not None:
-    fixtures_df["Gameweek"] = pd.to_numeric(fixtures_df["Gameweek"], errors="coerce").fillna(0).astype(int)
-    fixtures_df["Team"] = fixtures_df["Team"].astype(str).str.strip()
-    fixtures_df["Opponent"] = fixtures_df["Opponent"].astype(str).str.strip()
-    players = attach_fixtures(players, fixtures_df, gameweek)
-else:
-    players["Opponent"] = ""
+# ===============================
+# RANKING: PickScore (fixed weights)
+# ===============================
+players["zValue"]   = zscore(players["Value"])
+players["zUSG"]     = zscore(players["USG%"])
+players["zOpp"]     = zscore(players["OppBenefit"])
+players["zMinutes"] = zscore(players["Minutes"])
 
-# Opponent impact
-if defpos_df is not None:
-    defpos_df.columns = [c.strip() for c in defpos_df.columns]
-    defpos_df["Team"] = defpos_df["Team"].astype(str).str.strip()
-players = apply_opponent_by_position(players, defpos_df)
+players["PickScore"] = (
+    W_VALUE   * players["zValue"]   +
+    W_USAGE   * players["zUSG"]     +
+    W_OPP     * players["zOpp"]     +
+    W_MINUTES * players["zMinutes"]   # minutes boost
+)
 
-# Pick Score (weights fixed for simplicity; you can expose sliders later)
-w_value, w_usg, w_opp = 1.0, 0.7, 0.8
-players["zValue"] = zscore(players["Value"])
-players["zUSG"]   = zscore(players["USG%"])
-players["zOpp"]   = zscore(players["OppBenefit"])
-players["PickScore"] = w_value*players["zValue"] + w_usg*players["zUSG"] + w_opp*players["zOpp"]
-
-# Filters
+# Filters & ordering
 teams_sorted = sorted(players["Team"].unique().tolist())
-pos_options = ["PG","SG","SF","PF","C","G","F","G/F","F/C"]
 sel_teams = st.multiselect("Filter teams", teams_sorted, default=teams_sorted)
-sel_pos   = st.multiselect("Filter positions (optional)", pos_options, default=[])
-min_min   = st.slider("Min minutes", 0, int(players["Minutes"].max()) if len(players) else 36, 18, 1)
-
 mask = players["Team"].isin(sel_teams) & (players["Minutes"] >= min_min)
-if sel_pos:
-    mask &= players["Position"].isin(sel_pos)
-picks = players[mask].copy().sort_values("PickScore", ascending=False)
+picks = players[mask].sort_values("PickScore", ascending=False)
 
-# Outputs
-with left:
-    st.subheader("Top Picks this Gameweek")
-    top_n = st.slider("Show top N", 5, 40, 15, 1)
-    top = picks.head(top_n)
-    fig = px.bar(top, x="Player", y="PickScore", color="Team",
-                 hover_data=["Position","Opponent","Value","USG%","EFF","OppBenefit"])
-    st.plotly_chart(fig, use_container_width=True)
+# ===============================
+# OUTPUTS
+# ===============================
+st.subheader("Top Picks this Gameweek")
+fig = px.bar(
+    picks.head(top_n),
+    x="Player", y="PickScore", color="Team",
+    hover_data=["Team","Opponent","EFF","USG%","Value","OppBenefit","Minutes"]
+)
+st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("### Picks Table")
-show_cols = ["Player","Team","Position","Opponent","Minutes","Price","EFF","USG%","Value","OppBenefit","PickScore"]
-st.dataframe(top[show_cols].reset_index(drop=True), use_container_width=True)
+cols = ["Player","Team","Opponent","Minutes","EFF","USG%","Value","OppBenefit","PickScore"]
+st.dataframe(picks[cols].reset_index(drop=True), use_container_width=True)
 
-with st.expander("See full filtered list"):
-    st.dataframe(picks[show_cols].reset_index(drop=True), use_container_width=True)
-
-# Correlation
-st.markdown("### Correlation (how factors relate)")
-x_metric = st.selectbox("X", ["Minutes","EFF","USG%","Value","OppBenefit"])
-y_metric = st.selectbox("Y", ["PickScore","Value","USG%","EFF"])
-fig_sc = px.scatter(picks, x=x_metric, y=y_metric, color="Team", hover_data=["Player","Position","Opponent"])
-st.plotly_chart(fig_sc, use_container_width=True)
-
-corr = picks[[x_metric,y_metric]].corr().iloc[0,1] if len(picks) else np.nan
-st.write(f"**Pearson correlation between `{x_metric}` and `{y_metric}`:** `{corr:.3f}`" if pd.notna(corr) else "Not enough data.")
+st.markdown("### Correlation")
+x = st.selectbox("X", ["Minutes","EFF","USG%","Value","OppBenefit"])
+y = st.selectbox("Y", ["PickScore","Value","USG%","EFF"])
+fig2 = px.scatter(picks, x=x, y=y, color="Team", hover_data=["Player","Opponent"])
+st.plotly_chart(fig2, use_container_width=True)
+if not picks.empty:
+    corr = picks[[x, y]].corr().iloc[0, 1]
+    st.write(f"**Pearson r({x}, {y}) = {corr:.3f}**")
