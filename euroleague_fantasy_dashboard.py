@@ -60,16 +60,38 @@ with players_tab:
 # Teams tab (new!)
 # =========================
 with teams_tab:
+   # =========================
+# Teams tab (improved)
+# =========================
+with teams_tab:
     st.subheader("Team summary")
-    team_metric = st.radio("Team metric", ["Points", "Rebounds", "Assists"], horizontal=True, key="team_metric")
 
-    # Aggregate by team (averages per player; change to sum() if you prefer totals)
+    # Choose metric and aggregation
+    left, right = st.columns([2, 1])
+    with left:
+        team_metric = st.radio(
+            "Team metric",
+            ["Points", "Rebounds", "Assists"],
+            horizontal=True,
+            key="team_metric",
+        )
+    with right:
+        agg_mode = st.toggle("Use totals (instead of averages)", value=True, key="agg_mode")
+
+    # Aggregate by team
+    agg_fn = "sum" if agg_mode else "mean"
     team_stats = (
         df.groupby("Team", as_index=False)[["Points", "Rebounds", "Assists"]]
-        .mean()
+        .agg(agg_fn)
         .sort_values(by=team_metric, ascending=False)
     )
 
+    # Quick Top-3 highlight
+    top3 = team_stats.head(3)[["Team", team_metric]].reset_index(drop=True)
+    st.caption("Top 3 teams")
+    st.dataframe(top3, use_container_width=True, hide_index=True)
+
+    # Chart + table
     fig_team = px.bar(team_stats, x="Team", y=team_metric, title=None)
     st.plotly_chart(fig_team, use_container_width=True)
 
