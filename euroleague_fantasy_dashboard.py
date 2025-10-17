@@ -18,7 +18,7 @@ df = load_data()
 players_tab, teams_tab = st.tabs(["Players", "Teams"])
 
 # =========================
-# Players tab (your current view)
+# Players tab
 # =========================
 with players_tab:
     st.sidebar.header("Player Filters")
@@ -27,10 +27,7 @@ with players_tab:
     selected_metric = st.sidebar.radio("Select metric", ["Points", "Rebounds", "Assists"], horizontal=True)
     top_n = st.sidebar.slider("Show top N players", min_value=3, max_value=20, value=10, step=1)
 
-    # Apply filters
     filtered = df[df["Team"].isin(selected_teams)].copy()
-
-    # Leaderboard (Top N)
     leaderboard = filtered.sort_values(by=selected_metric, ascending=False).head(top_n)
 
     col1, col2 = st.columns([2, 1])
@@ -57,16 +54,11 @@ with players_tab:
         st.dataframe(filtered.reset_index(drop=True), use_container_width=True)
 
 # =========================
-# Teams tab (new!)
-# =========================
-with teams_tab:
-   # =========================
-# Teams tab (improved)
+# Teams tab (fixed indentation)
 # =========================
 with teams_tab:
     st.subheader("Team summary")
 
-    # Choose metric and aggregation
     left, right = st.columns([2, 1])
     with left:
         team_metric = st.radio(
@@ -78,7 +70,6 @@ with teams_tab:
     with right:
         agg_mode = st.toggle("Use totals (instead of averages)", value=True, key="agg_mode")
 
-    # Aggregate by team
     agg_fn = "sum" if agg_mode else "mean"
     team_stats = (
         df.groupby("Team", as_index=False)[["Points", "Rebounds", "Assists"]]
@@ -86,13 +77,6 @@ with teams_tab:
         .sort_values(by=team_metric, ascending=False)
     )
 
-    # Quick Top-3 highlight
     top3 = team_stats.head(3)[["Team", team_metric]].reset_index(drop=True)
-    st.caption("Top 3 teams")
-    st.dataframe(top3, use_container_width=True, hide_index=True)
-
-    # Chart + table
-    fig_team = px.bar(team_stats, x="Team", y=team_metric, title=None)
-    st.plotly_chart(fig_team, use_container_width=True)
-
-    st.dataframe(team_stats.reset_index(drop=True), use_container_width=True, hide_index=True)
+    st.caption("🏆 Top 3 teams")
+    st.dataframe(t
