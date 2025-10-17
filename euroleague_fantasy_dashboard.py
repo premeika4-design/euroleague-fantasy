@@ -14,49 +14,63 @@ def load_data():
 
 df = load_data()
 
-# ---- Sidebar filters ----
-st.sidebar.header("Filters")
-all_teams = sorted(df["Team"].unique().tolist())
-selected_teams = st.sidebar.multiselect("Select teams", options=all_teams, default=all_teams)
-selected_metric = st.sidebar.radio("Select metric", ["Points", "Rebounds", "Assists"], horizontal=True)
-top_n = st.sidebar.slider("Show top N players", min_value=3, max_value=20, value=10, step=1)
+# ---- Tabs ----
+players_tab, teams_tab = st.tabs(["Players", "Teams"])
 
-# Apply filters
-filtered = df[df["Team"].isin(selected_teams)].copy()
+# =========================
+# Players tab (your current view)
+# =========================
+with players_tab:
+    st.sidebar.header("Player Filters")
+    all_teams = sorted(df["Team"].unique().tolist())
+    selected_teams = st.sidebar.multiselect("Select teams", options=all_teams, default=all_teams)
+    selected_metric = st.sidebar.radio("Select metric", ["Points", "Rebounds", "Assists"], horizontal=True)
+    top_n = st.sidebar.slider("Show top N players", min_value=3, max_value=20, value=10, step=1)
 
-# ---- Leaderboard (Top N by selected metric) ----
-leaderboard = filtered.sort_values(by=selected_metric, ascending=False).head(top_n)
+    # Apply filters
+    filtered = df[df["Team"].isin(selected_teams)].copy()
 
-# ---- Layout ----
-col1, col2 = st.columns([2, 1])
+    # Leaderboard (Top N)
+    leaderboard = filtered.sort_values(by=selected_metric, ascending=False).head(top_n)
 
-with col1:
-    st.subheader(f"{selected_metric} per Player")
-    fig = px.bar(
-        leaderboard,
-        x="Player",
-        y=selected_metric,
-        color="Team",
-        title=None,
-        text=selected_metric,
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.subheader(f"Top {top_n} by {selected_metric}")
+        fig = px.bar(
+            leaderboard, x="Player", y=selected_metric, color="Team",
+            text=selected_metric, title=None
+        )
+        fig.update_traces(textposition="outside")
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        st.subheader("Leaderboard")
+        st.dataframe(leaderboard.reset_index(drop=True), use_container_width=True, hide_index=True)
+        st.download_button(
+            "Download leaderboard CSV",
+            data=leaderboard.to_csv(index=False).encode("utf-8"),
+            file_name="leaderboard.csv",
+            mime="text/csv",
+        )
+
+    with st.expander("See full filtered table"):
+        st.dataframe(filtered.reset_index(drop=True), use_container_width=True)
+
+# =========================
+# Teams tab (new!)
+# =========================
+with teams_tab:
+    st.subheader("Team summary")
+    team_metric = st.radio("Team metric", ["Points", "Rebounds", "Assists"], horizontal=True, key="team_metric")
+
+    # Aggregate by team (averages per player; change to sum() if you prefer totals)
+    team_stats = (
+        df.groupby("Team", as_index=False)[["Points", "Rebounds", "Assists"]]
+        .mean()
+        .sort_values(by=team_metric, ascending=False)
     )
-    fig.update_traces(textposition="outside")
-    st.plotly_chart(fig, use_container_width=True)
 
-with col2:
-    st.subheader("Leaderboard")
-    st.dataframe(
-        leaderboard.reset_index(drop=True),
-        use_container_width=True,
-        hide_index=True,
-    )
-    st.download_button(
-        "Download leaderboard CSV",
-        data=leaderboard.to_csv(index=False).encode("utf-8"),
-        file_name="leaderboard.csv",
-        mime="text/csv",
-    )
+    fig_team = px.bar(team_stats, x="Team", y=team_metric, title=None)
+    st.plotly_chart(fig_team, use_container_width=True)
 
-# ---- Full table (optional below) ----
-with st.expander("See full filtered table"):
-    st.dataframe(filtered.reset_index(drop=True), use_container_width=True)
+    st.dataframe(team_stats.reset_index(drop=True), use_container_width=True, hide_index=True)
