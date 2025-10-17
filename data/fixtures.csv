@@ -1,0 +1,201 @@
+Gameweek,Team,Opponent
+1,Real Madrid,Gran Canaria
+1,Gran Canaria,Real Madrid
+1,FC Barcelona,Paris Basketball
+1,Paris Basketball,FC Barcelona
+1,Olympiacos,ALBA Berlin
+1,ALBA Berlin,Olympiacos
+1,Panathinaikos,Bayern Munich
+1,Bayern Munich,Panathinaikos
+1,Fenerbahçe,Zalgiris Kaunas
+1,Zalgiris Kaunas,Fenerbahçe
+1,Anadolu Efes,Valencia
+1,Valencia,Anadolu Efes
+1,Maccabi Tel Aviv,Baskonia
+1,Baskonia,Maccabi Tel Aviv
+1,Partizan,LDLC ASVEL
+1,LDLC ASVEL,Partizan
+1,Crvena Zvezda,AS Monaco
+1,AS Monaco,Crvena Zvezda
+1,Virtus Bologna,Olimpia Milano
+1,Olimpia Milano,Virtus Bologna
+2,Real Madrid,Paris Basketball
+2,Paris Basketball,Real Madrid
+2,FC Barcelona,Bayern Munich
+2,Bayern Munich,FC Barcelona
+2,Olympiacos,Zalgiris Kaunas
+2,Zalgiris Kaunas,Olympiacos
+2,Panathinaikos,Valencia
+2,Valencia,Panathinaikos
+2,Fenerbahçe,Baskonia
+2,Baskonia,Fenerbahçe
+2,Anadolu Efes,LDLC ASVEL
+2,LDLC ASVEL,Anadolu Efes
+2,Maccabi Tel Aviv,AS Monaco
+2,AS Monaco,Maccabi Tel Aviv
+2,Partizan,Olimpia Milano
+2,Olimpia Milano,Partizan
+2,Crvena Zvezda,Virtus Bologna
+2,Virtus Bologna,Crvena Zvezda
+2,ALBA Berlin,Gran Canaria
+2,Gran Canaria,ALBA Berlin
+3,Real Madrid,ALBA Berlin
+3,ALBA Berlin,Real Madrid
+3,FC Barcelona,Bayern Munich
+3,Bayern Munich,FC Barcelona
+3,Olympiacos,Zalgiris Kaunas
+3,Zalgiris Kaunas,Olympiacos
+3,Panathinaikos,Valencia
+3,Valencia,Panathinaikos
+3,Fenerbahçe,Baskonia
+3,Baskonia,Fenerbahçe
+3,Anadolu Efes,LDLC ASVEL
+3,LDLC ASVEL,Anadolu Efes
+3,Maccabi Tel Aviv,AS Monaco
+3,AS Monaco,Maccabi Tel Aviv
+3,Partizan,Olimpia Milano
+3,Olimpia Milano,Partizan
+3,Crvena Zvezda,Virtus Bologna
+3,Virtus Bologna,Crvena Zvezda
+3,Paris Basketball,Gran Canaria
+3,Gran Canaria,Paris Basketball
+4,Real Madrid,Bayern Munich
+4,Bayern Munich,Real Madrid
+4,FC Barcelona,Zalgiris Kaunas
+4,Zalgiris Kaunas,FC Barcelona
+4,Olympiacos,Valencia
+4,Valencia,Olympiacos
+4,Panathinaikos,Baskonia
+4,Baskonia,Panathinaikos
+4,Fenerbahçe,LDLC ASVEL
+4,LDLC ASVEL,Fenerbahçe
+4,Anadolu Efes,AS Monaco
+4,AS Monaco,Anadolu Efes
+4,Maccabi Tel Aviv,Olimpia Milano
+4,Olimpia Milano,Maccabi Tel Aviv
+4,Partizan,Virtus Bologna
+4,Virtus Bologna,Partizan
+4,Crvena Zvezda,Gran Canaria
+4,Gran Canaria,Crvena Zvezda
+4,Paris Basketball,ALBA Berlin
+4,ALBA Berlin,Paris Basketball
+5,Real Madrid,Zalgiris Kaunas
+5,Zalgiris Kaunas,Real Madrid
+5,FC Barcelona,Valencia
+5,Valencia,FC Barcelona
+5,Olympiacos,Baskonia
+5,Baskonia,Olympiacos
+5,Panathinaikos,LDLC ASVEL
+5,LDLC ASVEL,Panathinaikos
+5,Fenerbahçe,AS Monaco
+5,AS Monaco,Fenerbahçe
+5,Anadolu Efes,Olimpia Milano
+5,Olimpia Milano,Anadolu Efes
+5,Maccabi Tel Aviv,Virtus Bologna
+5,Virtus Bologna,Maccabi Tel Aviv
+5,Partizan,Gran Canaria
+5,Gran Canaria,Partizan
+5,Crvena Zvezda,ALBA Berlin
+5,ALBA Berlin,Crvena Zvezda
+5,Paris Basketball,Bayern Munich
+5,Bayern Munich,Paris Basketball
+6,Real Madrid,Valencia
+6,Valencia,Real Madrid
+6,FC Barcelona,Baskonia
+6,Baskonia,FC Barcelona
+6,Olympiacos,LDLC ASVEL
+6,LDLC ASVEL,Olympiacos
+6,Panathinaikos,AS Monaco
+6,AS Monaco,Panathinaikos
+6,Fenerbahçe,Olimpia Milano
+6,Olimpia Milano,Fenerbahçe
+6,Anadolu Efes,Virtus Bologna
+6,Virtus Bologna,Anadolu Efes
+6,Maccabi Tel Aviv,Gran Canaria
+6,Gran Canaria,Maccabi Tel Aviv
+6,Partizan,ALBA Berlin
+6,ALBA Berlin,Partizan
+6,Crvena Zvezda,Bayern Munich
+6,Bayern Munich,Crvena Zvezda
+6,Paris Basketball,Zalgiris Kaunas
+6,Zalgiris Kaunas,Paris Basketball
+7,Real Madrid,Baskonia
+7,Baskonia,Real Madrid
+7,FC Barcelona,LDLC ASVEL
+7,LDLC ASVEL,FC Barcelona
+7,Olympiacos,AS Monaco
+7,AS Monaco,Olympiacos
+7,Panathinaikos,Olimpia Milano
+7,Olimpia Milano,Panathinaikos
+7,Fenerbahçe,Virtus Bologna
+7,Virtus Bologna,Fenerbahçe
+7,Anadolu Efes,Gran Canaria
+7,Gran Canaria,Anadolu Efes
+7,Maccabi Tel Aviv,ALBA Berlin
+7,ALBA Berlin,Maccabi Tel Aviv
+7,Partizan,Bayern Munich
+7,Bayern Munich,Partizan
+7,Crvena Zvezda,Zalgiris Kaunas
+7,Zalgiris Kaunas,Crvena Zvezda
+7,Paris Basketball,Valencia
+7,Valencia,Paris Basketball
+8,Real Madrid,LDLC ASVEL
+8,LDLC ASVEL,Real Madrid
+8,FC Barcelona,AS Monaco
+8,AS Monaco,FC Barcelona
+8,Olympiacos,Olimpia Milano
+8,Olimpia Milano,Olympiacos
+8,Panathinaikos,Virtus Bologna
+8,Virtus Bologna,Panathinaikos
+8,Fenerbahçe,Gran Canaria
+8,Gran Canaria,Fenerbahçe
+8,Anadolu Efes,ALBA Berlin
+8,ALBA Berlin,Anadolu Efes
+8,Maccabi Tel Aviv,Bayern Munich
+8,Bayern Munich,Maccabi Tel Aviv
+8,Partizan,Zalgiris Kaunas
+8,Zalgiris Kaunas,Partizan
+8,Crvena Zvezda,Valencia
+8,Valencia,Crvena Zvezda
+8,Paris Basketball,Baskonia
+8,Baskonia,Paris Basketball
+9,Real Madrid,AS Monaco
+9,AS Monaco,Real Madrid
+9,FC Barcelona,Olimpia Milano
+9,Olimpia Milano,FC Barcelona
+9,Olympiacos,Virtus Bologna
+9,Virtus Bologna,Olympiacos
+9,Panathinaikos,Gran Canaria
+9,Gran Canaria,Panathinaikos
+9,Fenerbahçe,ALBA Berlin
+9,ALBA Berlin,Fenerbahçe
+9,Anadolu Efes,Bayern Munich
+9,Bayern Munich,Anadolu Efes
+9,Maccabi Tel Aviv,Zalgiris Kaunas
+9,Zalgiris Kaunas,Maccabi Tel Aviv
+9,Partizan,Valencia
+9,Valencia,Partizan
+9,Crvena Zvezda,Baskonia
+9,Baskonia,Crvena Zvezda
+9,Paris Basketball,LDLC ASVEL
+9,LDLC ASVEL,Paris Basketball
+10,Real Madrid,Olimpia Milano
+10,Olimpia Milano,Real Madrid
+10,FC Barcelona,Virtus Bologna
+10,Virtus Bologna,FC Barcelona
+10,Olympiacos,Gran Canaria
+10,Gran Canaria,Olympiacos
+10,Panathinaikos,ALBA Berlin
+10,ALBA Berlin,Panathinaikos
+10,Fenerbahçe,Bayern Munich
+10,Bayern Munich,Fenerbahçe
+10,Anadolu Efes,Zalgiris Kaunas
+10,Zalgiris Kaunas,Anadolu Efes
+10,Maccabi Tel Aviv,Valencia
+10,Valencia,Maccabi Tel Aviv
+10,Partizan,Baskonia
+10,Baskonia,Partizan
+10,Crvena Zvezda,LDLC ASVEL
+10,LDLC ASVEL,Crvena Zvezda
+10,Paris Basketball,AS Monaco
+10,AS Monaco,Paris Basketball
