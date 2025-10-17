@@ -33,50 +33,9 @@ with players_tab:
     col1, col2 = st.columns([2, 1])
     with col1:
         st.subheader(f"Top {top_n} by {selected_metric}")
-        fig = px.bar(
-            leaderboard, x="Player", y=selected_metric, color="Team",
-            text=selected_metric, title=None
-        )
-        fig.update_traces(textposition="outside")
+        fig = px.bar(leaderboard, x="Player", y=selected_metric, color="Team", text=selected_metric)
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         st.subheader("Leaderboard")
-        st.dataframe(leaderboard.reset_index(drop=True), use_container_width=True, hide_index=True)
-        st.download_button(
-            "Download leaderboard CSV",
-            data=leaderboard.to_csv(index=False).encode("utf-8"),
-            file_name="leaderboard.csv",
-            mime="text/csv",
-        )
-
-    with st.expander("See full filtered table"):
-        st.dataframe(filtered.reset_index(drop=True), use_container_width=True)
-
-# =========================
-# Teams tab (fixed indentation)
-# =========================
-with teams_tab:
-    st.subheader("Team summary")
-
-    left, right = st.columns([2, 1])
-    with left:
-        team_metric = st.radio(
-            "Team metric",
-            ["Points", "Rebounds", "Assists"],
-            horizontal=True,
-            key="team_metric",
-        )
-    with right:
-        agg_mode = st.toggle("Use totals (instead of averages)", value=True, key="agg_mode")
-
-    agg_fn = "sum" if agg_mode else "mean"
-    team_stats = (
-        df.groupby("Team", as_index=False)[["Points", "Rebounds", "Assists"]]
-        .agg(agg_fn)
-        .sort_values(by=team_metric, ascending=False)
-    )
-
-    top3 = team_stats.head(3)[["Team", team_metric]].reset_index(drop=True)
-    st.caption("🏆 Top 3 teams")
-    st.dataframe(t
+        st.dataframe(leaderboard.reset_index(drop=True), use_container_width=True)
